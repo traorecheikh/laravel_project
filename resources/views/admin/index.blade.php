@@ -7,5 +7,9 @@
 </head>
 <body>
 <h1>Hello Admin {{auth()->user()->fname}}</h1>
+<form action="{{route('logout')}}" METHOD="POST">
+    @csrf
+    <button type="submit">Deconnexion</button>
+</form>
 </body>
 </html>

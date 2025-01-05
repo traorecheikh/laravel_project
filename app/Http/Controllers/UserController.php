@@ -13,6 +13,13 @@ class UserController extends Controller
         return view('index');
     }
 
+    public function dashboard(){
+       if(Auth::user()->role == 'admin'){
+           return view('admin.index');
+       }
+       return view('user.index');
+    }
+
     public function register(Request $request){
         if($request->isMethod('post')){
             $validated = $request->validate([
@@ -37,17 +44,23 @@ class UserController extends Controller
     public function login(Request $request){
         if($request->isMethod('post')){
             $validated = $request->validate([
-                'username' => 'min:3required',
+                'username' => 'min:3|required',
                 'password' => 'min:4|required',
             ]);
             if(Auth::attempt(['username' => $request->username, 'password' => $request->password])){
                 //this will make a new session for the authenticated user so nobody can hijack his sessions
                 $request->session()->regenerate();
-                return redirect()->intended('/admin.index');
+                return redirect()->intended('/dashboard');
             }else{
                 return back()->with('error','Invalid Username or Password');
             }
         }
         return view('login');
+    }
+
+    public function logout(Request $request){
+        Auth::logout();
+        $request->session()->invalidate();
+        return redirect('/login');
     }
 }
