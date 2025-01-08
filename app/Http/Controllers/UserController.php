@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Book;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -15,7 +16,9 @@ class UserController extends Controller
 
     public function dashboard(){
        if(Auth::user()->role == 'admin'){
-           return view('admin.index');
+           $TotalUsers = User::where('role', 'user')->count();
+           $TotalBooks = Book::All()->count();
+           return view('admin.index',compact('TotalUsers','TotalBooks'));
        }
        return view('user.index');
     }
@@ -52,6 +55,7 @@ class UserController extends Controller
                 $request->session()->regenerate();
                 return redirect()->intended('/dashboard');
             }else{
+
                 return back()->with('error','Invalid Username or Password');
             }
         }
@@ -62,5 +66,41 @@ class UserController extends Controller
         Auth::logout();
         $request->session()->invalidate();
         return redirect('/login');
+    }
+
+    public function manageBook(){
+        $books = Book::all();
+        return view('admin.book', compact('books'));
+    }
+
+    public function manageUser(){
+        $users = User::where('role', 'user')->get();
+        return view('admin.user', compact('users'));
+    }
+
+    public function createBook(Request $request){
+        if($request->isMethod('post')){
+            if($request->hasFile('image')&&$request->file('image')->isValid()){
+                $requestValide = $request->validate([
+                   'title' => 'min:4|required',
+                   'description' => 'min:5|required',
+                   'author' => 'min:2|required',
+                   'genre' => 'min:4|required',
+                ]);
+                $book = new Book();
+                $book->title = $requestValide['title'];
+                $book->description = $requestValide['description'];
+                $book->author = $requestValide['author'];
+                $book->genre = $requestValide['genre'];
+                $book->quantity = $request->quantity;
+                $book->release_date = $request->release_date ?? date(now())  ;
+                $path = $request->file('image')->store('images', 'public');
+                $book->image = $path;
+                $book->save();
+                return redirect()->route('dashboard');
+            }
+            return back()->withErrors('error','Something going wrong');
+        }
+        return view('books.create');
     }
 }
